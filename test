@@ -1,0 +1,238 @@
+import csv
+import requests
+import pandas as pf
+from bs4 import BeautifulSoup
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoAlertPresentException
+import unittest, time, re
+import time,datetime
+
+from time import sleep
+import sys
+
+# ============================================================================
+
+print('☆★☆Yahoo電影查詢專區★☆★')
+print('1.本週新片\n2.本週上映中\n3.即將上映')
+print('如果不想查詢了，請按0退出')
+print('請輸入你的選擇')
+
+
+while True: 
+    y = int(input('在這邊輸入選擇項目 : '))
+    x = int(input('在這邊輸入所要篇數 (最高10): '))
+#=============================================================================
+    if y == 1:
+        url='https://movies.yahoo.com.tw/movie_thisweek.html'
+    
+        
+        options = webdriver.ChromeOptions()                             #新增,掠過網頁憑證錯誤
+        options.add_argument('--ignore-certificate-errors')            #新增,掠過網頁憑證錯誤
+        #options.add_argument('user-agent-{}'.format(headers))        #新增,掠過網頁憑證錯誤
+        driver = webdriver.Chrome(chrome_options=options)             #新增,掠過網頁憑證錯誤   
+        
+        with open('本週新片.csv','w+',newline='', encoding="utf-8-sig") as csvfile:   #解決多一空行 newline=''
+            writer = csv.writer(csvfile)
+            writer.writerow(('電影名稱','英文名稱','上映日期','期待度'))
+            writer.writerow(['電影簡介',"電影連結"])
+        
+            driver.get(url)
+        
+            html = driver.page_source
+            sp=BeautifulSoup(html,"html.parser")
+            search_title= sp.select(" div.release_box > ul > li > div > a ")
+            search_en = sp.select(" div.release_box > ul > li > div > div > div > div")
+            search_day = sp.select(" div.release_box > ul > li > div > div > div.release_movie_time")
+            search_want = sp.select(" div.release_box > ul > li > div > div > div > dl > dt > div > span")
+            search_data = sp.select(" div.release_box > ul > li > div > div > div > span")
+            search_super = sp.select(" div.release_box > ul > li > div > div > div > span > a ")
+        
+        
+            for i in range(x):#len(search_title)
+                print(i+1)
+                print(search_title[i].get('data-ga')[24:].rstrip("']"))
+                print(search_en[i].text.strip())
+                print(search_day[i].text)
+                print('期待度 : '+search_want[i].text)
+                print(search_data[i].text.strip())
+                print(search_super[i].get('href'))
+            
+                writer.writerow([search_title[i].get('data-ga')[24:].rstrip("']") , search_en[i].text.strip( ), search_day[i].text , '期待度 : '+search_want[i].text])
+                writer.writerow([search_data[i].text.strip() , search_super[i].get('href')])
+            
+        
+                headers = {
+                        "Authorization": "Bearer " + "keJLMmCOjUwjf6wQ38zQKRv32YRuiuLgZzoBz7ZRoR8",
+                        "Content-Type": "application/x-www-form-urlencoded"
+                        }
+                message1=(search_title[i].get('data-ga')[24:].rstrip("']")+' '+search_en[i].text.strip( )+'\n')
+                message2=(search_day[i].text+'\n')
+                message3=('期待度 : '+search_want[i].text+'\n')
+                message4=(search_data[i].text.strip()+'\n')
+                message5=(search_super[i].get('href'))
+                               
+                params = {"message": message1+message2+message3+message4+message5}
+                    # message1 = (search_span[i].text,search_em[i].text,(search_href[i].text,search_href[i].get('href'))
+                    
+                r = requests.post("https://notify-api.line.me/api/notify",
+                                      headers=headers, params=params)
+                    
+                print(r.status_code)  
+                    
+                    
+                sleep(1)   
+                
+                print('★乂☆ 請問還要查詢嗎 ☆乂★')
+                print('1.本週新片\n2.本週上映中\n3.即將上映')
+                print('如果不想查詢了，請按0退出')
+                print('請在下面選擇項目及篇數(篇數最高10)')
+    #=============================================================================    
+        
+    elif y ==2:
+        url='https://movies.yahoo.com.tw/movie_intheaters.html'
+        
+        
+        options = webdriver.ChromeOptions()                             #新增,掠過網頁憑證錯誤
+        options.add_argument('--ignore-certificate-errors')            #新增,掠過網頁憑證錯誤
+        #options.add_argument('user-agent-{}'.format(headers))        #新增,掠過網頁憑證錯誤
+        driver = webdriver.Chrome(chrome_options=options)             #新增,掠過網頁憑證錯誤   
+        
+        with open('本週上映中.csv','w+',newline='', encoding="utf-8-sig") as csvfile:   #解決多一空行 newline=''
+            writer = csv.writer(csvfile)
+            writer.writerow(('電影名稱','英文名稱','上映日期','期待度','滿意度'))
+            writer.writerow(['電影簡介',"電影連結"])
+        
+            driver.get(url)
+        
+            html = driver.page_source
+            sp=BeautifulSoup(html,"html.parser")
+            search_title= sp.select(" div.release_box > ul > li > div > a ")
+            search_en = sp.select(" div.release_box > ul > li > div > div > div > div")
+            search_day = sp.select(" div.release_box > ul > li > div > div > div.release_movie_time")
+            search_want = sp.select(" div.release_box > ul > li > div > div > div > dl > dt > div > span")
+            search_value = sp.select(" div.release_box > ul > li > div > div > div > dl > dd > div > span")
+            search_data = sp.select(" div.release_box > ul > li > div > div > div > span")
+            search_super = sp.select(" div.release_box > ul > li > div > div > div > span > a ")
+        
+        
+            for i in range(x):#len(search_title)
+                print(i+1)
+                print(search_title[i].get('data-ga')[24:].rstrip("']"))
+                print(search_en[i].text.strip())
+                print(search_day[i].text)
+                print('期待度 : '+search_want[i].text)
+                print('滿意度 : '+search_value[i].text)
+                print(search_data[i].text.strip())
+                print(search_super[i].get('href'))
+            
+                writer.writerow([search_title[i].get('data-ga')[24:].rstrip("']") , search_en[i].text.strip( ), search_day[i].text , '期待度 : '+search_want[i].text ,'滿意度 : '+search_value[i].text])
+                writer.writerow([search_data[i].text.strip() , search_super[i].get('href')])
+            
+        
+                headers = {
+                        "Authorization": "Bearer " + "keJLMmCOjUwjf6wQ38zQKRv32YRuiuLgZzoBz7ZRoR8",
+                        "Content-Type": "application/x-www-form-urlencoded"
+                        }
+                message1=(search_title[i].get('data-ga')[21:].rstrip("']")+' '+search_en[i].text.strip( )+'\n')
+                message2=(search_day[i].text+'\n')
+                message3=('期待度 : '+search_want[i].text+'\n'+'滿意度 : '+search_value[i].text+'\n')
+                message4=(search_data[i].text.strip()+'\n')
+                message5=(search_super[i].get('href'))
+                               
+                params = {"message": message1+message2+message3+message4+message5}
+                    # message1 = (search_span[i].text,search_em[i].text,(search_href[i].text,search_href[i].get('href'))
+                    
+                r = requests.post("https://notify-api.line.me/api/notify",
+                                      headers=headers, params=params)
+                    
+                print(r.status_code)  
+                    
+                    
+                sleep(1)     
+                
+                print('★乂☆ 請問還要查詢嗎 ☆乂★')
+                print('1.本週新片\n2.本週上映中\n3.即將上映')
+                print('如果不想查詢了，請按0退出')
+                print('請在下面選擇項目及篇數(篇數最高10)')
+    #=============================================================================    
+    elif y ==3:
+        url='https://movies.yahoo.com.tw/movie_comingsoon.html'
+        
+        
+        options = webdriver.ChromeOptions()                             #新增,掠過網頁憑證錯誤
+        options.add_argument('--ignore-certificate-errors')            #新增,掠過網頁憑證錯誤
+        #options.add_argument('user-agent-{}'.format(headers))        #新增,掠過網頁憑證錯誤
+        driver = webdriver.Chrome(chrome_options=options)             #新增,掠過網頁憑證錯誤   
+        
+        with open('即將上映.csv','w+',newline='', encoding="utf-8-sig") as csvfile:   #解決多一空行 newline=''
+            writer = csv.writer(csvfile)
+            writer.writerow(('電影名稱','英文名稱','上映日期','期待度'))
+            writer.writerow(['電影簡介',"電影連結"])
+        
+            driver.get(url)
+        
+            html = driver.page_source
+            sp=BeautifulSoup(html,"html.parser")
+            search_title= sp.select(" div.release_box > ul > li > div > a ")
+            search_en = sp.select(" div.release_box > ul > li > div > div > div > div")
+            search_day = sp.select(" div.release_box > ul > li > div > div > div.release_movie_time")
+            search_want = sp.select(" div.release_box > ul > li > div > div > div > dl > dt > div > span")
+            search_data = sp.select(" div.release_box > ul > li > div > div > div > span")
+            search_super = sp.select(" div.release_box > ul > li > div > div > div > span > a ")
+        
+        
+            for i in range(x):#len(search_title)
+                print(i+1)
+                print(search_title[i].get('data-ga')[24:].rstrip("']"))
+                print(search_en[i].text.strip())
+                print(search_day[i].text)
+                print('期待度 : '+search_want[i].text)
+                print(search_data[i].text.strip())
+                print(search_super[i].get('href'))
+            
+                writer.writerow([search_title[i].get('data-ga')[24:].rstrip("']") , search_en[i].text.strip( ), search_day[i].text , '期待度 : '+search_want[i].text])
+                writer.writerow([search_data[i].text.strip() , search_super[i].get('href')])
+            
+        
+                headers = {
+                        "Authorization": "Bearer " + "keJLMmCOjUwjf6wQ38zQKRv32YRuiuLgZzoBz7ZRoR8",
+                        "Content-Type": "application/x-www-form-urlencoded"
+                        }
+                message1=(search_title[i].get('data-ga')[24:].rstrip("']")+' '+search_en[i].text.strip( )+'\n')
+                message2=(search_day[i].text+'\n')
+                message3=('期待度 : '+search_want[i].text+'\n')
+                message4=(search_data[i].text.strip()+'\n')
+                message5=(search_super[i].get('href'))
+                               
+                params = {"message": message1+message2+message3+message4+message5}
+                    # message1 = (search_span[i].text,search_em[i].text,(search_href[i].text,search_href[i].get('href'))
+                    
+                r = requests.post("https://notify-api.line.me/api/notify",
+                                      headers=headers, params=params)
+                    
+                print(r.status_code)  
+                    
+                    
+                sleep(1) 
+                
+                print('★乂☆ 請問還要查詢嗎 ☆乂★')
+                print('1.本週新片\n2.本週上映中\n3.即將上映')
+                print('如果不想查詢了，請按0退出')
+                print('請在下面選擇項目及篇數(篇數最高10)')
+    #  #=============================================================================            
+    elif y ==0:
+            print('您已退出本系統') 
+            break
+    # ============================================================================
+    else:
+        print('請不要隨便亂輸入,只能查詢1、2、3 !!!')
+
+print('已完全停止')
+      
+
+ 
